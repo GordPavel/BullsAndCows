@@ -11,8 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
@@ -54,22 +54,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
             .authenticated()
 
             .and()
+            .exceptionHandling()
+            .authenticationEntryPoint( new LoginUrlAuthenticationEntryPoint( "/" ) )
+
+            .and()
             .formLogin()
             .loginPage( "/login" )
             .usernameParameter( "login" )
             .passwordParameter( "pass" )
-            .defaultSuccessUrl( "/person" )
+            .successHandler( new SimpleUrlAuthenticationSuccessHandler( "/login" ) )
 
             .and()
             .logout()
             .logoutUrl( "/logout" )
-            .deleteCookies( "JSESSIONID" )
+            .logoutSuccessUrl( "/login?logout" )
 
             .and()
             .rememberMe()
-
-            .tokenRepository( persistentTokenRepository() )
-            .userDetailsService( userDetailsService )
             .tokenValiditySeconds( ( int ) Duration.ofDays( 1 ).toMillis() )
 
             .and()
@@ -82,12 +83,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
         HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
         repository.setSessionAttributeName( "_csrf" );
         return repository;
-    }
-
-    @Bean
-    public PersistentTokenRepository persistentTokenRepository(){
-        JdbcTokenRepositoryImpl tokenRepositoryImpl = new JdbcTokenRepositoryImpl();
-        tokenRepositoryImpl.setDataSource( dataSource );
-        return tokenRepositoryImpl;
     }
 }

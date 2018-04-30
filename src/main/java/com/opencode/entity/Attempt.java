@@ -3,6 +3,7 @@ package com.opencode.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table( name = "attempt", schema = "public" )
@@ -21,6 +22,10 @@ public class Attempt{
     @Basic
     @Column( name = "number" )
     private String number;
+
+    @Column( name = "date_of_game", nullable = false, insertable = false, updatable = false )
+    @Convert( converter = ZonedDateTimeConverter.class )
+    private ZonedDateTime attempt_time;
 
     @ManyToOne( optional = false, targetEntity = Game.class )
     @JoinColumn( name = "game", nullable = false )

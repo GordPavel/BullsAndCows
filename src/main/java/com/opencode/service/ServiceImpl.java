@@ -1,17 +1,19 @@
 package com.opencode.service;
 
 import com.opencode.controller.RegistrationForm;
+import com.opencode.entity.Game;
 import com.opencode.entity.Player;
+import com.opencode.repository.GamesRepository;
 import com.opencode.repository.PlayersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@Service
-public class PlayersServiceImpl implements PlayersService{
+@org.springframework.stereotype.Service
+public class ServiceImpl implements Service{
 
     @Autowired PlayersRepository playersRepository;
+    @Autowired GamesRepository   gamesRepository;
 
     @Override
     public Integer save( RegistrationForm form ){
@@ -25,5 +27,12 @@ public class PlayersServiceImpl implements PlayersService{
             if( loadGames ) player.setGames( playersRepository.getGamesByLogin( login ) );
             return player;
         } );
+    }
+
+    @Override
+    public Optional<Game> getNewGameOrContinueOld( String login ){
+//        todo Начать новую игру
+        return gamesRepository.getNotEndedGameByPlayerLogin( login )
+                              .map( id -> gamesRepository.findById( id ).orElse( null ) );
     }
 }

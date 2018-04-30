@@ -32,5 +32,7 @@ public class Game{
     @Column( name = "guessed_number", nullable = false )
     private String guessedNumber;
 
-    @OneToMany( mappedBy = "game", fetch = FetchType.EAGER ) private List<Attempt> attempts;
+    @OneToMany( mappedBy = "game", fetch = FetchType.EAGER )
+    @OrderBy( "attempt_time asc" )
+    private List<Attempt> attempts;
 }

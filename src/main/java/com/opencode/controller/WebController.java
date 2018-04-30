@@ -1,9 +1,10 @@
 package com.opencode.controller;
 
 import com.opencode.repository.PlayersRepository;
-import com.opencode.service.PlayersService;
+import com.opencode.service.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,11 +14,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 
 @Controller
@@ -25,7 +25,7 @@ public class WebController{
 
     @Autowired PasswordEncoder   passwordEncoder;
     @Autowired PlayersRepository playersRepository;
-    @Autowired PlayersService    playersService;
+    @Autowired Service           service;
 
     @Bean
     Validator getRegistrationValidator(){
@@ -52,19 +52,29 @@ public class WebController{
         return new RegistrationForm();
     }
 
-    @GetMapping( value = "/" )
-    String login(){
+    @GetMapping( value = { "/" , "/login" } )
+    String login(
+            @RequestParam( required = false )
+                    String logout , Model model ){
+        final Optional<?> game = playersRepository.getNotEndedGameByPlayerLogin( "login" );
+        if( logout != null ){
+            model.addAttribute( "logout" , "You have been logged out successfully." );
+            return "login";
+        }
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if( authentication.getPrincipal() instanceof User ){
+            final String login = ( ( User ) authentication.getPrincipal() ).getUsername();
+            return "redirect:/person/" + login;
+        }
         return "login";
     }
 
-    @GetMapping( value = "/person" )
-    String personPage( Model model ){
-//        Получает данные о пользователе из аттрибутов сессии
-        model.addAttribute( "user" ,
-                            playersService.loadEntity( ( ( User ) SecurityContextHolder.getContext()
-                                                                                       .getAuthentication()
-                                                                                       .getPrincipal() ).getUsername() ,
-                                                       true ) );
+    @GetMapping( value = "/person/{login}" )
+    String personPage(
+            @PathVariable
+                    String login , Model model ){
+//        todo Если пользователь не найден
+        model.addAttribute( "user" , service.loadEntity( login , true ).get() );
         model.addAttribute( "formatter" , DateTimeFormatter.ofPattern( "dd.MM.yyyy HH:mm" ) );
         return "playerPage";
     }
@@ -75,7 +85,8 @@ public class WebController{
                     RegistrationForm form , BindingResult bindingResult , Model model ){
         getRegistrationValidator().validate( form , bindingResult );
         if( bindingResult.hasErrors() ) return "login";
-        playersService.save( form );
+        form.setPassword( passwordEncoder.encode( form.getPassword() ) );
+        service.save( form );
         model.addAttribute( "registrationSuccess" , "Registration success" );
         return "login";
     }
