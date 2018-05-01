@@ -12,6 +12,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode( of = "id" )
 @NoArgsConstructor
+@AllArgsConstructor
 @ToString( of = { "id" , "guessedNumber" , "dateOfGame" , "attempts" } )
 public class Game{
     @Id
@@ -33,6 +34,6 @@ public class Game{
     private String guessedNumber;
 
     @OneToMany( mappedBy = "game", fetch = FetchType.EAGER )
-    @OrderBy( "attempt_time asc" )
+    @OrderBy( "id" )
     private List<Attempt> attempts;
 }

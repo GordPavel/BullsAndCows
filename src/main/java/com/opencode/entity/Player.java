@@ -1,7 +1,6 @@
 package com.opencode.entity;
 
 import lombok.*;
-import org.springframework.beans.factory.annotation.Required;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
@@ -14,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode( of = "id" )
 @NoArgsConstructor
 @RequiredArgsConstructor
-@ToString( of = { "id" , "login" , "pass" , "dateOfRegistration" , "games" } )
+@ToString( of = { "id" , "login" , "pass" , "dateOfRegistration" } )
 public class Player{
 
     @Id
@@ -37,6 +36,5 @@ public class Player{
     @Convert( converter = ZonedDateTimeConverter.class )
     private ZonedDateTime dateOfRegistration;
 
-    @OneToMany( mappedBy = "player", fetch = FetchType.LAZY )
-    private List<Game> games;
+    @OneToMany( mappedBy = "player", fetch = FetchType.LAZY ) private List<Game> games;
 }

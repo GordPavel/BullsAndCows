@@ -4,13 +4,16 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <html>
 <head>
+    <title>Login</title>
+
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Login</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="<c:url value="/resources/js/jquery.min.js"/>"></script>
+    <script src="<c:url value="/resources/js/bootstrap.min.js"/>"></script>
     <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/bootstrap.min.css"/>"/>
+
     <script>
         function loginOrRegistration() {
             var isLogin = $('#loginForm').css('visibility') === 'visible';
@@ -49,7 +52,7 @@
         <div id="loginForm" class="col-md-6 signIn" style="visibility: visible">
             <div class="wrap">
                 <c:url var="loginUrl" value="/login"/>
-                <form id="signIn" action="${loginUrl}" method="post">
+                <form id="signIn" action="${loginUrl}" method="post" role="form">
                     <h2 class="form-signin-heading">Sign in</h2>
                     <div class="form-group">
                         <label for="username">Nickname</label>
@@ -61,7 +64,7 @@
                         <input type="password" class="form-control" id="password" name="pass"
                                placeholder="Enter Password" required>
                     </div>
-                    <div class="form-check">
+                    <div class="checkbox">
                         <input type="checkbox" name="remember-me" class="form-check-input" id="dropdownCheck2">
                         <label class="form-check-label" for="dropdownCheck2">Remember me</label>
                     </div>
@@ -73,8 +76,9 @@
         <div class="col-md-6 registration">
             <div class="wrap">
                 <c:url var="registrationUrl" value="/registration"/>
+                <%--@elvariable id="registrationForm" type="com.opencode.controller.RegistrationForm"--%>
                 <form:form id="signUp" method="POST" action="${registrationUrl}" modelAttribute="registrationForm"
-                           class="form-signin">
+                           class="form-signin" role="form">
                     <h2 class="form-signin-heading">Create your account</h2>
                     <spring:bind path="login">
                         <div class="form-group ${status.error ? 'has-error' : ''}">

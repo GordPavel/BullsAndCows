@@ -7,13 +7,16 @@
 <div class="container header">
     <div class="btn-group btn-group-justified">
         <sec:authorize access="isAuthenticated()">
+            <sec:authentication var="principal" property="principal"/>
             <div class="btn-group">
-                <button type="button" class="btn btn-default">User page</button>
+                <a type="button" href="<c:url value="/person/${principal.username}"/>" class="btn btn-default">
+                    User page
+                </a>
             </div>
         </sec:authorize>
         <sec:authorize access="isAuthenticated()">
             <div class="btn-group">
-                <button type="button" class="btn btn-default">Game</button>
+                <a type="button" href="<c:url value="/game"/>" class="btn btn-default">Game</a>
             </div>
         </sec:authorize>
         <div class="btn-group">

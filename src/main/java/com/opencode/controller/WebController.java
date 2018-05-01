@@ -1,5 +1,7 @@
 package com.opencode.controller;
 
+import com.opencode.entity.Game;
+import com.opencode.repository.GamesRepository;
 import com.opencode.repository.PlayersRepository;
 import com.opencode.service.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,8 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Optional;
 
 
@@ -25,6 +29,7 @@ public class WebController{
 
     @Autowired PasswordEncoder   passwordEncoder;
     @Autowired PlayersRepository playersRepository;
+    @Autowired GamesRepository   gamesRepository;
     @Autowired Service           service;
 
     @Bean
@@ -56,16 +61,12 @@ public class WebController{
     String login(
             @RequestParam( required = false )
                     String logout , Model model ){
-        final Optional<?> game = playersRepository.getNotEndedGameByPlayerLogin( "login" );
-        if( logout != null ){
-            model.addAttribute( "logout" , "You have been logged out successfully." );
-            return "login";
-        }
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if( authentication.getPrincipal() instanceof User ){
             final String login = ( ( User ) authentication.getPrincipal() ).getUsername();
             return "redirect:/person/" + login;
         }
+        if( logout != null ) model.addAttribute( "logout" , "You have been logged out successfully." );
         return "login";
     }
 
@@ -74,7 +75,7 @@ public class WebController{
             @PathVariable
                     String login , Model model ){
 //        todo Если пользователь не найден
-        model.addAttribute( "user" , service.loadEntity( login , true ).get() );
+        model.addAttribute( "user" , service.loadPlayer( login , true ).get() );
         model.addAttribute( "formatter" , DateTimeFormatter.ofPattern( "dd.MM.yyyy HH:mm" ) );
         return "playerPage";
     }
@@ -88,6 +89,52 @@ public class WebController{
         form.setPassword( passwordEncoder.encode( form.getPassword() ) );
         service.save( form );
         model.addAttribute( "registrationSuccess" , "Registration success" );
-        return "login";
+        return login( null , model );
+    }
+
+
+    @GetMapping( value = "/game/{id}" )
+    String gameById(
+            @PathVariable
+                    Integer id , Model model ){
+        final String
+                login =
+                ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+        final LinkedList<Game>
+                notEndedGamesOfPrincipal =
+                new LinkedList<>( gamesRepository.getNotEndedGamesByPlayerLogin( login ) );
+        Game                 game;
+        final Optional<Game> optionalGame = gamesRepository.findById( id ).filter( notEndedGamesOfPrincipal::contains );
+        if( optionalGame.isPresent() ){
+            game = optionalGame.get();
+            notEndedGamesOfPrincipal.remove( game );
+        }else{
+            game = service.newGame( login );
+            game.setAttempts( Collections.emptyList() );
+            model.addAttribute( "error" , "Error while finding specified game" );
+        }
+        model.addAttribute( "game" , game );
+        model.addAttribute( "list" , notEndedGamesOfPrincipal );
+        return "game";
+    }
+
+    @GetMapping( value = "/game" )
+    String game( Model model ){
+        final String
+                login =
+                ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+        final LinkedList<Game>
+                notEndedGamesOfPrincipal =
+                new LinkedList<>( gamesRepository.getNotEndedGamesByPlayerLogin( login ) );
+        final Optional<Game> optionalGame = Optional.ofNullable( notEndedGamesOfPrincipal.pollFirst() );
+        Game                 game         = optionalGame.orElseGet( () -> service.newGame( login ) );
+        model.addAttribute( "game" , game );
+        model.addAttribute( "list" , notEndedGamesOfPrincipal );
+        return "game";
+    }
+
+    @GetMapping( value = "rating" )
+    String rating( Model model ){
+        return "rating";
     }
 }

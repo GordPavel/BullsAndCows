@@ -23,7 +23,7 @@ public class Attempt{
     @Column( name = "number" )
     private String number;
 
-    @Column( name = "date_of_game", nullable = false, insertable = false, updatable = false )
+    @Column( name = "attempt_time", nullable = false, insertable = false, updatable = false )
     @Convert( converter = ZonedDateTimeConverter.class )
     private ZonedDateTime attempt_time;
 
