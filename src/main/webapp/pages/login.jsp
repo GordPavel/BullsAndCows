@@ -1,19 +1,11 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <html>
 <head>
+    <%@include file="/resources/templates/includes.jsp" %>
+
     <title>Login</title>
-
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <script src="<c:url value="/resources/js/jquery.min.js"/>"></script>
-    <script src="<c:url value="/resources/js/bootstrap.min.js"/>"></script>
-    <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/bootstrap.min.css"/>"/>
-
     <script>
         function loginOrRegistration() {
             var isLogin = $('#loginForm').css('visibility') === 'visible';
@@ -42,9 +34,9 @@
                 <p>Invalid username and password.</p>
             </div>
         </c:if>
-        <c:if test="${logout != null}">
+        <c:if test="${param.logout != null}">
             <div class="alert alert-success">
-                <p>${logout}</p>
+                <p>You have been log out successfully</p>
             </div>
         </c:if>
     </div>

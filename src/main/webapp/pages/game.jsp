@@ -1,30 +1,121 @@
 <%--@elvariable id="game" type="com.opencode.entity.Game"--%>
 <%--@elvariable id="error" type="java.lang.String"--%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <html>
 <head>
+    <%@include file="/resources/templates/includes.jsp" %>
     <title>Game#${game.id}</title>
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <script src="<c:url value="/resources/js/jquery.min.js"/>"></script>
-    <script src="<c:url value="/resources/js/bootstrap.min.js"/>"></script>
-    <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/bootstrap.min.css"/>"/>
+    <meta id="_csrf_token" value="${_csrf.token}"/>
     <script>
+        function serverAnswer(attempt, guessed) {
+            if (attempt === guessed) return 'Ты победил!';
+            var bulls = 0;
+            var cows = 0;
+            var attemptArray = attempt.split("");
+            var guessedArray = guessed.split("");
+            attemptArray.map(function (value, index) {
+                return {first: value, second: guessedArray[index]};
+            }).forEach(function (value) {
+                if (value.first === value.second) bulls++;
+                else if (guessed.includes(value.first)) cows++;
+            });
+            return bulls + 'Б' + cows + 'К';
+        }
+
         function sendAttempt() {
-            $.ajax({});
+            var newAttempt = ($('#1').text() + $('#2').text() + $('#3').text() + $('#4').text());
+
+            function getAttemptTemplate(attemptNumber, answer = serverAnswer(attemptNumber, "${game.guessedNumber}")) {
+                var index = parseInt($('#attempts').children().last().children().first().text());
+                if (isNaN(index)) index = 0;
+                return '                        <tr>' +
+                    '                            <th scope="row">' + (index + 1) + '</th>\n' +
+                    '                            <td>' + attemptNumber + '</td>\n' +
+                    '                            <td id="answer' + index + '">' + answer + '</td>\n' +
+                    '                        </tr>';
+            }
+
+            $.ajax({
+                url: "${pageContext.request.contextPath}/newAttempt",
+                type: 'POST',
+                headers: {
+                    "X-CSRF-TOKEN": $('#_csrf_token').attr('value')
+                },
+                data: JSON.stringify({
+                    gameId: "${game.id}",
+                    attempt: newAttempt
+                }),
+                contentType: "text/plain",
+                success: function (data) {
+                    if (data === 'Ты победил!') {
+                        $('#game').css('visibility', 'hidden');
+                        $('#send').css('visibility', 'hidden');
+                    }
+                    $('#attempts').append(getAttemptTemplate(newAttempt, data));
+                    $('#answer').text(data);
+                },
+                error: function (xhr) {
+                    $('#answer').text(xhr.responseText);
+                }
+            });
         }
 
         var min = 0;
         var max = 9;
 
         $(document).ready(function () {
+            [
+                <c:forEach items="${game.attempts}" var="attempt">
+                "${attempt.number}",
+                </c:forEach>
+            ].map(function (value) {
+                return serverAnswer(value, "${game.guessedNumber}");
+            }).forEach(function (value, index) {
+                $('#answer' + index).text(value);
+            });
 
+            $('.btn.minus').on('click', function (event) {
+                var num = $(event.target).attr('number');
+                var element = $('#' + num);
+                var val = element.text();
+                if (val > min) {
+                    if (parseInt(val) <= max) {
+                        $(event.target).parent().next().children().removeAttr('disabled');
+                    }
+                    element.text(val - 1);
+                    if (parseInt(element.text()) === min) {
+                        $(event.target).attr('disabled', 'disabled');
+                    } else {
+                        $(event.target).removeAttr('disabled');
+                    }
+                }
+            });
+
+            $('.btn.plus').on('click', function (event) {
+                var num = $(event.target).attr('number');
+                var element = $('#' + num);
+                var val = element.text();
+                if (val < max) {
+                    if (parseInt(val) >= min) {
+                        $(event.target).parent().prev().children().removeAttr('disabled');
+                    }
+                    element.text(parseInt(val) + 1);
+                    if (parseInt(element.text()) === max) {
+                        $(event.target).attr('disabled', 'disabled');
+                    } else {
+                        $(event.target).removeAttr('disabled');
+                    }
+                }
+            });
         });
     </script>
+
+    <style>
+        .btn-group-justified, .btn-group-justified > .btn-group {
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
 <%@include file="/resources/templates/header.jsp" %>
@@ -38,7 +129,7 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-            <div class="row">
+            <div id="game" class="row">
                 <label>Let's play!</label>
                 <br>
                 <div role="form" class="btn-group-justified">
@@ -47,12 +138,12 @@
 
                         <div class="btn-group-justified btn-block" role="group" aria-label="plus-minus">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-danger"
-                                        disabled="disabled"><span class="glyphicon glyphicon-minus"></span>
+                                <button type="button" class="btn btn-danger minus" disabled="disabled"
+                                        number="1"><span class="glyphicon glyphicon-minus"></span>
                                 </button>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-success">
+                                <button type="button" class="btn btn-success plus" number="1">
                                     <span class="glyphicon glyphicon-plus"></span></button>
                             </div>
                         </div><!-- end button group -->
@@ -64,12 +155,12 @@
 
                         <div class="btn-group-justified btn-block" role="group" aria-label="plus-minus">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-danger"
-                                        disabled="disabled"><span class="glyphicon glyphicon-minus"></span>
+                                <button type="button" class="btn btn-danger minus"
+                                        disabled="disabled" number="2"><span class="glyphicon glyphicon-minus"></span>
                                 </button>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-success">
+                                <button type="button" class="btn btn-success plus" number="2">
                                     <span class="glyphicon glyphicon-plus"></span></button>
                             </div>
                         </div><!-- end button group -->
@@ -81,12 +172,12 @@
 
                         <div class="btn-group-justified btn-block" role="group" aria-label="plus-minus">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-danger"
-                                        disabled="disabled"><span class="glyphicon glyphicon-minus"></span>
+                                <button type="button" class="btn btn-danger minus"
+                                        disabled="disabled" number="3"><span class="glyphicon glyphicon-minus"></span>
                                 </button>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-success">
+                                <button type="button" class="btn btn-success plus" number="3">
                                     <span class="glyphicon glyphicon-plus"></span></button>
                             </div>
                         </div><!-- end button group -->
@@ -97,32 +188,48 @@
 
                         <div class="btn-group-justified btn-block" role="group" aria-label="plus-minus">
                             <div class="btn-group">
-                                <button type="button" class="btn btn-danger"
-                                        disabled="disabled"><span class="glyphicon glyphicon-minus"></span>
+                                <button type="button" class="btn btn-danger minus"
+                                        disabled="disabled" number="4"><span class="glyphicon glyphicon-minus"></span>
                                 </button>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-success">
+                                <button type="button" class="btn btn-success plus" number="4">
                                     <span class="glyphicon glyphicon-plus"></span></button>
                             </div>
                         </div><!-- end button group -->
                     </div> <!-- end column -->
-                    <button onclick="sendAttempt()" value="Try your lick"></button>
                 </div>
             </div>
             <div id="answerDiv" class="row alert alert-info">
-                <label for="answer">Server answer</label>
-                <textarea id="answer" readonly> </textarea>
+                <div class="row">
+                    <label for="answer">Server answer</label>
+                    <button id="send" class="pull-right" onclick="sendAttempt()">Try your luck</button>
+                </div>
+                <textarea id="answer" class="row col-md-12 col-sm-12"
+                          style="height: 50px;resize: vertical; min-height: 50px;max-height: 150px"
+                          readonly> </textarea>
             </div>
             <div class="row">
                 <label class="pull-left">Attempts</label>
                 <br>
-                <ul class="list-group col-md-8">
+                <table class="table col-md-8">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Attempt</th>
+                        <th scope="col">Answer</th>
+                    </tr>
+                    </thead>
+                    <tbody id="attempts">
                     <c:forEach items="${game.attempts}" var="attempt" varStatus="status">
-                        <li class="list-group-item text-center"><span
-                                class="pull-left">#${status.index}</span>${attempt.number}</li>
+                        <tr>
+                            <th scope="row">${status.index+1}</th>
+                            <td>${attempt.number}</td>
+                            <td id="answer${status.index}"></td>
+                        </tr>
                     </c:forEach>
-                </ul>
+                    </tbody>
+                </table>
             </div>
         </div>
         <div class="col-md-6">

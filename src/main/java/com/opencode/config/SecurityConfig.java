@@ -8,14 +8,16 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.time.Duration;
 
@@ -48,7 +50,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
     @Override
     protected void configure( HttpSecurity http ) throws Exception{
         http.authorizeRequests()
-            .antMatchers( "/" , "/home" , "/resources/**" , "/registration" , "/rating" )
+            .antMatchers( "/" , "/login" , "/resources/**" , "/registration" , "/rating" )
             .permitAll()
             .anyRequest()
             .authenticated()
@@ -62,12 +64,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
             .loginPage( "/login" )
             .usernameParameter( "login" )
             .passwordParameter( "pass" )
-            .successHandler( new SimpleUrlAuthenticationSuccessHandler( "/login" ) )
+//            Redirect principal to his page
+            .successHandler( ( httpServletRequest , httpServletResponse , authentication ) -> {
+                final String
+                        login =
+                        ( ( User ) SecurityContextHolder.getContext()
+                                                        .getAuthentication()
+                                                        .getPrincipal() ).getUsername();
+                httpServletResponse.sendRedirect( getRedirectString( httpServletRequest , "/person/" + login ) );
+            } )
+            .failureHandler( ( httpServletRequest , httpServletResponse , e ) -> httpServletResponse.sendRedirect(
+                    getRedirectString( httpServletRequest , "/login?error" ) ) )
+
 
             .and()
             .logout()
             .logoutUrl( "/logout" )
-            .logoutSuccessUrl( "/login?logout" )
+            .logoutSuccessHandler( ( httpServletRequest , httpServletResponse , authentication ) -> httpServletResponse.sendRedirect(
+                    getRedirectString( httpServletRequest , "/login?logout" ) ) )
 
             .and()
             .rememberMe()
@@ -76,6 +90,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
             .and()
             .csrf()
             .csrfTokenRepository( csrfTokenRepository() );
+    }
+
+    private String getRedirectString( HttpServletRequest httpServletRequest , String redirect ){
+        return httpServletRequest.getRequestURL()
+                                 .replace( httpServletRequest.getRequestURL().length() -
+                                           httpServletRequest.getServletPath().length() ,
+                                           httpServletRequest.getRequestURL().length() ,
+                                           redirect )
+                                 .toString();
     }
 
     @Bean

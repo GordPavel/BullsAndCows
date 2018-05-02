@@ -20,7 +20,7 @@
             </div>
         </sec:authorize>
         <div class="btn-group">
-            <button type="button" class="btn btn-default">Players rating</button>
+            <a type="button" href="<c:url value="/rating"/>" class="btn btn-default">Players rating</a>
         </div>
         <sec:authorize access="isAuthenticated()">
             <form class="btn-group" method="post" action="<c:url value="/logout"/>" id="logout">
