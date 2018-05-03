@@ -7,4 +7,4 @@ and Cows number, that shows how many digits contains in computer's number. Serve
 Also server counts plaeyrs' rating. Your score is average of your attempts to guess number in completed games. If you completed no games,
 you have zero score.  **Try to climb to the top!**
 
-Web service made with String 5. I used MVC and Security parts of this.
+Web service made with String 5. I used MVC, Security and Data JPA parts of this.
