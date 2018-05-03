@@ -24,6 +24,7 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -52,8 +53,21 @@ public class WebController{
                 ValidationUtils.rejectIfEmptyOrWhitespace( errors , "password" , "" , "Couldn't be empty" );
                 ValidationUtils.rejectIfEmptyOrWhitespace( errors , "passwordConfirm" , "" , "Couldn't be empty" );
 
-                if( playersRepository.getByLogin( ( ( RegistrationForm ) o ).getLogin() ).isPresent() )
+                if( errors.hasErrors() ) return;
+
+                final RegistrationForm form = ( RegistrationForm ) o;
+                if( !Charset.forName( "US-ASCII" ).newEncoder().canEncode( form.getLogin() ) )
+                    errors.rejectValue( "login" , "" , "Can't read not ascii symbols." );
+
+                if( errors.hasErrors() ) return;
+
+                if( playersRepository.getByLogin( form.getLogin() ).isPresent() )
                     errors.rejectValue( "login" , "" , "Nickname already exists" );
+
+                if( !form.getPassword().equals( form.getPasswordConfirm() ) ){
+                    errors.rejectValue( "password" , "" , "Different passwords" );
+                    errors.rejectValue( "passwordConfirm" , "" , "Different passwords" );
+                }
             }
         };
     }
@@ -66,17 +80,8 @@ public class WebController{
     @GetMapping( value = { "/" , "/login" } )
     String login( Model model ){
         model.addAttribute( "registrationForm" , new RegistrationForm() );
+        model.addAttribute( "regError" , false );
         return "login";
-    }
-
-    @GetMapping( value = "/person/{login}" )
-    String personPage(
-            @PathVariable
-                    String login , Model model ){
-//        todo Если пользователь не найден
-        model.addAttribute( "user" , service.loadPlayer( login , true ).get() );
-        model.addAttribute( "formatter" , DateTimeFormatter.ofPattern( "dd.MM.yyyy HH:mm" ) );
-        return "playerPage";
     }
 
     @PostMapping( value = "/registration" )
@@ -84,18 +89,33 @@ public class WebController{
             @ModelAttribute( "registrationForm" )
                     RegistrationForm form , BindingResult bindingResult , Model model ){
         getRegistrationValidator().validate( form , bindingResult );
-        if( bindingResult.hasErrors() ) return "login";
+        if( bindingResult.hasErrors() ){
+            model.addAttribute( "regError" , true );
+            return "login";
+        }
+        model.addAttribute( "regError" , false );
         form.setPassword( passwordEncoder.encode( form.getPassword() ) );
         service.save( form );
         model.addAttribute( "registrationSuccess" , "Registration success" );
         return "login";
     }
 
+    @GetMapping( value = "/person/{login}" )
+    String personPage(
+            @PathVariable
+                    String login , Model model ) throws IllegalArgumentException{
+        model.addAttribute( "user" ,
+                            service.loadPlayer( login , true )
+                                   .orElseThrow( () -> new IllegalArgumentException( "This player doesn't exists" ) ) );
+        model.addAttribute( "formatter" , DateTimeFormatter.ofPattern( "dd.MM.yyyy HH:mm" ) );
+        return "playerPage";
+    }
+
 
     @GetMapping( value = "/game/{id}" )
     String gameById(
             @PathVariable
-                    Integer id , Model model ){
+                    Integer id , Model model ) throws IllegalArgumentException{
         final String
                 login =
                 ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
@@ -118,7 +138,7 @@ public class WebController{
     }
 
     @GetMapping( value = "/game" )
-    String game( Model model ){
+    String game( Model model ) throws IllegalArgumentException{
         final String
                 login =
                 ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
@@ -192,5 +212,11 @@ public class WebController{
     String rating( Model model ){
         model.addAttribute( "rating" , service.rating() );
         return "rating";
+    }
+
+    @ExceptionHandler( IllegalArgumentException.class )
+    String playerNotFound( IllegalArgumentException exception , Model model ){
+        model.addAttribute( "error" , exception.getMessage() );
+        return "error";
     }
 }

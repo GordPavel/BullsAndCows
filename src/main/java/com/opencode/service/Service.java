@@ -43,10 +43,20 @@ public class Service{
         } );
     }
 
-    public Game newGame( String player ){
+
+    /**
+     Generates new game, related with specified player
+
+     @param player nickname of player
+
+     @return new game for player
+
+     @throws IllegalArgumentException if nickname doesn't exists in db
+     */
+    public Game newGame( String player ) throws IllegalArgumentException{
         Game game = new Game();
-//        todo Обработка ошибок
-        game.setPlayer( playersRepository.getByLogin( player ).orElseThrow( IllegalStateException::new ) );
+        game.setPlayer( playersRepository.getByLogin( player )
+                                         .orElseThrow( () -> new IllegalArgumentException( "This player doesn't exists" ) ) );
         game.setGuessedNumber( new Random( System.currentTimeMillis() ).ints( 0 , 9 )
                                                                        .distinct()
                                                                        .limit( 4 )

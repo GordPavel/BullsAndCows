@@ -13,6 +13,14 @@
             $('.signIn').css('visibility', (!isLogin) ? 'visible' : 'hidden');
             $('#change').text(isLogin ? 'Sign in' : 'Sign up');
         }
+
+        $(document).ready(function () {
+            var registrationError = ${regError};
+            if (registrationError) {
+                $('.signIn').css('visibility', 'hidden');
+                $('.registration').css('visibility', 'visible');
+            }
+        });
     </script>
     <style>
         .registration {
