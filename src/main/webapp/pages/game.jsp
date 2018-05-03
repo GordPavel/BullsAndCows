@@ -133,9 +133,11 @@
             </div>
         </div>
         <div class="col-md-6">
-            <label>Unfinished games</label><span></span>
+            <a class="btn btn-primary" href="<c:url value="/newGame"/>">New game</a>
             <br>
-            <ul class="list-group col-md-8">
+            <label for="unfinishedGames">Unfinished games</label><span></span>
+            <br>
+            <ul id="unfinishedGames" class="list-group col-md-8">
                 <c:forEach items="${list}" var="unfinished">
                     <li class="list-group-item text-center">
                         <a href="<c:url value="/game/${unfinished.id}"/>">Game#${unfinished.id}</a>

@@ -15,7 +15,7 @@
         }
 
         $(document).ready(function () {
-            var registrationError = ${regError};
+            var registrationError = ${regError != null ? true : false};
             if (registrationError) {
                 $('.signIn').css('visibility', 'hidden');
                 $('.registration').css('visibility', 'visible');

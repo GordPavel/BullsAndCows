@@ -80,7 +80,6 @@ public class WebController{
     @GetMapping( value = { "/" , "/login" } )
     String login( Model model ){
         model.addAttribute( "registrationForm" , new RegistrationForm() );
-        model.addAttribute( "regError" , false );
         return "login";
     }
 
@@ -90,10 +89,10 @@ public class WebController{
                     RegistrationForm form , BindingResult bindingResult , Model model ){
         getRegistrationValidator().validate( form , bindingResult );
         if( bindingResult.hasErrors() ){
+//            To show registration window
             model.addAttribute( "regError" , true );
             return "login";
         }
-        model.addAttribute( "regError" , false );
         form.setPassword( passwordEncoder.encode( form.getPassword() ) );
         service.save( form );
         model.addAttribute( "registrationSuccess" , "Registration success" );
@@ -107,18 +106,26 @@ public class WebController{
         model.addAttribute( "user" ,
                             service.loadPlayer( login , true )
                                    .orElseThrow( () -> new IllegalArgumentException( "This player doesn't exists" ) ) );
+//        For dates formatting in jsp
         model.addAttribute( "formatter" , DateTimeFormatter.ofPattern( "dd.MM.yyyy HH:mm" ) );
         return "playerPage";
     }
 
 
+    /**
+     Finds game by id. If it doesn't exist in db or isn't in not completed list of user, method generates new game.
+
+     @param id of game
+
+     @return founded game or new
+
+     @throws IllegalArgumentException if incorrect login of player. handled by @ErrorHandler
+     */
     @GetMapping( value = "/game/{id}" )
     String gameById(
             @PathVariable
                     Integer id , Model model ) throws IllegalArgumentException{
-        final String
-                login =
-                ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+        final String login = getUsername();
         final LinkedList<Game>
                 notEndedGamesOfPrincipal =
                 new LinkedList<>( gamesRepository.getNotEndedGamesByPlayerLogin( login ) );
@@ -137,11 +144,16 @@ public class WebController{
         return "game";
     }
 
+    /**
+     Continues last not completed game of player or generated new game, if this not completed games list is empty
+
+     @return last not completed game of player or new game
+
+     @throws IllegalArgumentException if incorrect login of player. handled by @ErrorHandler
+     */
     @GetMapping( value = "/game" )
     String game( Model model ) throws IllegalArgumentException{
-        final String
-                login =
-                ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+        final String login = getUsername();
         final LinkedList<Game>
                 notEndedGamesOfPrincipal =
                 new LinkedList<>( gamesRepository.getNotEndedGamesByPlayerLogin( login ) );
@@ -152,6 +164,25 @@ public class WebController{
         return "game";
     }
 
+    @GetMapping( value = "/newGame" )
+    String newGame( Model model ) throws IllegalArgumentException{
+        final String login = getUsername();
+        model.addAttribute( "list" , gamesRepository.getNotEndedGamesByPlayerLogin( login ) );
+        Game game = service.newGame( login );
+        model.addAttribute( "game" , game );
+        return "game";
+    }
+
+    private String getUsername(){
+        return ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+    }
+
+    /**
+     Responses on ajax request to add new attempt in game. Checks constraints on correct attempted number, correct
+     game and player.
+
+     @return response string on not completed attempt, string 'Ты победил!' on game over or error text on any error
+     */
     @PostMapping( value = "/newAttempt", consumes = "text/plain" )
     @ResponseBody
     ResponseEntity<?> newAttempt(
@@ -161,9 +192,7 @@ public class WebController{
             final Map<String, String>
                     requestBody =
                     objectMapper().readValue( body , new TypeReference<Map<String, String>>(){ } );
-            final String
-                    login =
-                    ( ( User ) SecurityContextHolder.getContext().getAuthentication().getPrincipal() ).getUsername();
+            final String login = getUsername();
             final Integer gameId        = Integer.parseInt( requestBody.get( "gameId" ) );
             final String  attemptNumber = requestBody.get( "attempt" );
             if( !attemptNumber.matches( "^\\d{4}$" ) ) throw new NumberFormatException( "Illegal attempt string" );
