@@ -28,7 +28,6 @@ import java.nio.charset.Charset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-
 @Controller
 public class WebController{
 
@@ -192,7 +191,7 @@ public class WebController{
             final Map<String, String>
                     requestBody =
                     objectMapper().readValue( body , new TypeReference<Map<String, String>>(){ } );
-            final String login = getUsername();
+            final String  login         = getUsername();
             final Integer gameId        = Integer.parseInt( requestBody.get( "gameId" ) );
             final String  attemptNumber = requestBody.get( "attempt" );
             if( !attemptNumber.matches( "^\\d{4}$" ) ) throw new NumberFormatException( "Illegal attempt string" );

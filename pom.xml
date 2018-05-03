@@ -9,6 +9,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>war</packaging>
 
+
     <properties>
         <encoding>UTF-8</encoding>
         <java.version>1.8</java.version>
@@ -21,9 +22,18 @@
         <jstl.version>1.2</jstl.version>
         <standard.version>1.1.2</standard.version>
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+        <maven-war-plugin.version>2.4</maven-war-plugin.version>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>${javax.servlet-api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Spring MVC support -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -113,19 +123,30 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>/src/main/java</sourceDirectory>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <encoding>${encoding}</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
+        <!--<finalName>HelloWorld</finalName>-->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <encoding>${encoding}</encoding>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven-war-plugin.version}</version>
+                    <configuration>
+                        <warSourceDirectory>src/main/webapp</warSourceDirectory>
+                        <warName>bullasAndCows</warName>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>
